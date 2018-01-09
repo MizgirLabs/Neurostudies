@@ -9,4 +9,6 @@ There I try to learn how to make a neural network
 
 [Рекуррентная нейросеть](http://karpathy.github.io/2015/05/21/rnn-effectiveness/)
 
+[Мой док для теории](https://docs.google.com/document/d/1FWv4pA60KkzwtpiJNcsC3jmLmXcYXNuY52RaelBTODc/edit)
+
 Керас.
