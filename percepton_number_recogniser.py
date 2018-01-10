@@ -71,20 +71,42 @@ def increase(number):
 
 
 # Тренировка сети
-for i in range(10000):
+# Равномерное обучение (мой фикс)
+d={}
+for j in range(0, 10):
+    d[j] = 5000
+var = [x for x in range(0, 10)]
+for i in range(50000):
     # Генерируем случайное число от 0 до 9
-    option = random.randint(0, 9)
-
-    # Если получилось НЕ число 5
-    if option != 5:
-        # Если сеть выдала True/Да/1, то наказываем ее
-        if proceed(nums[option]):
-            decrease(nums[option])
-    # Если получилось число 5
+    option = random.choice(var)
+    if d[option] > 0:
+        # Если получилось НЕ число 5
+        if option != 5:
+            # Если сеть выдала True/Да/1, то наказываем ее
+            if proceed(nums[option]):
+                decrease(nums[option])
+        # Если получилось число 5
+        else:
+            # Если сеть выдала False/Нет/0, то показываем, что эта цифра - то, что нам нужно
+            if not proceed(num5):
+                increase(num5)
+        d[option]= d[option]-1
     else:
-        # Если сеть выдала False/Нет/0, то показываем, что эта цифра - то, что нам нужно
-        if not proceed(num5):
-            increase(num5)
+        print(option)
+        var.remove(option)
+        option = random.choice(var)
+
+
+# Старый вариант этого кусочка
+# for i in range(10000):
+#    option = random.randint(0, 9)
+#    if option != 5:
+#        if proceed(nums[option]):
+#            decrease(nums[option])
+#    else:
+#        if not proceed(num5):
+#            increase(num5)
+
 
 # Вывод значений весов
 print(weights)
@@ -119,5 +141,7 @@ print("Узнал 5 - 6? ", proceed(num56))
 
 # Чтобы сеть гарантированно научилась распознавать нужную нам цифру надо соблюсти два условия:
 
-# Добиться равномерности показа всех обучающих цифр.
-# Увеличить общее количество шагов обучения (50 тысяч или 100 тысяч).
+#   Добиться равномерности показа всех обучающих цифр.
+#   Увеличить общее количество шагов обучения (50 тысяч или 100 тысяч).
+
+# !!! ИСПРАВЛЕНО !!!
