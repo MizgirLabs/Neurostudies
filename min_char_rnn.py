@@ -23,7 +23,7 @@ Wxh = np.random.randn(hidden_size, vocab_size) * 0.01  # input to hidden
 print(Wxh)
 Whh = np.random.randn(hidden_size, hidden_size) * 0.01  # hidden to hidden
 Why = np.random.randn(vocab_size, hidden_size) * 0.01  # hidden to output
-#  bias - уклон, отклонение, погрешность
+#  bias - уклон, отклонение, погрешность, (порог для функции активации)?
 bh = np.zeros((hidden_size, 1))  # hidden bias - нулевая матрица
 by = np.zeros((vocab_size, 1))  # output bias - нулевая матрица
 
