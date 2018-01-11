@@ -74,11 +74,12 @@ def increase(number):
 # Равномерное обучение (мой фикс)
 d={}
 for j in range(0, 10):
-    d[j] = 5000
+    d[j] = 5000  # Количество обучений на каждой цифре
 var = [x for x in range(0, 10)]
 for i in range(50000):
     # Генерируем случайное число от 0 до 9
     option = random.choice(var)
+    # Если не исчерпался лимит обучения на данном числе, то продолжаем
     if d[option] > 0:
         # Если получилось НЕ число 5
         if option != 5:
@@ -91,6 +92,7 @@ for i in range(50000):
             if not proceed(num5):
                 increase(num5)
         d[option]= d[option]-1
+    # Если исчерпался лимит обучения для данного числа, убираем число из учебной выборки
     else:
         print(option)
         var.remove(option)
