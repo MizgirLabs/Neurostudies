@@ -135,4 +135,14 @@ def train_base():
     conn.close()
 
 
-train_base()
+def vec_train(): # веторизпция обученной выборки
+    x = '先生 你 要 什么'
+    vector = []
+    for el in x:
+        if el == ' ':
+            vector.append('0.01')
+        else:
+            vector.append('0.99')
+    print(vector)
+
+vec_train()
