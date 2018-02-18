@@ -99,6 +99,7 @@ def query_base():
     conn.close()
 
 # тренировочная база
+# фраза|векторизация иероглифов в фразе|фраза с разбивкой на слова|целевой выход
 # target придется делать вручную
 
 def train_base():
@@ -135,14 +136,26 @@ def train_base():
     conn.close()
 
 
-def vec_train(): # веторизпция обученной выборки
-    x = '先生 你 要 什么'
-    vector = []
-    for el in x:
-        if el == ' ':
-            vector.append('0.01')
-        else:
-            vector.append('0.99')
-    print(vector)
-
-vec_train()
+def vec_train(): # вставляю в базу данных векторизованный вариант обучающей выборки
+    conn = sqlite3.connect('characters.db')
+    c = conn.cursor()
+    c.execute('''SELECT target
+                    FROM train
+                    ''')
+    result = c.fetchall()
+    for line in result:
+        vector = []
+        for el in line[0]:
+            if el == ' ':
+                vector.append('0.01')
+            else:
+                vector.append('0.99')
+        c.execute('''UPDATE train 
+                     SET arr_target = (?)
+                     WHERE target = (?)''',
+                  [' '.join(vector), line[0]])
+    c.execute('''SELECT target, arr_target
+                 FROM train
+                            ''')
+    conn.commit()
+    conn.close()
