@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.special as sp  # для функции сигмоиды
+import dataset_maker as dm
 
 
 class NeuralNetwork:  # это класс
@@ -7,17 +8,17 @@ class NeuralNetwork:  # это класс
     # инициализация класса
     # эта функция нужна для того, чтобы подготовить объект перед первым вызовом
     # тут создаем базовые переменные
-    def __init__(self, inputnodes, hiddennodes, outputnodes, learningrate):  # self - обязательный атрибут метода в питоне
-        self.inodes = inputnodes
-        self.hnodes = hiddennodes
-        self.onodes = outputnodes
+    def __init__(self, input_nodes, hidden_nodes, output_nodes, learning_rate):  # self - обязательный атрибут метода в питоне
+        self.inodes = input_nodes
+        self.hnodes = hidden_nodes
+        self.onodes = output_nodes
         # нормальное распределение Гаусса (для более сложной системы весов, см. док
         # аргументы - центр нормального распределения, стандартная девиация (ширина дистрибуции),
         # кортеж параметров (строка, столбец)
         # pow(число, его степень)
         self.wih = np.random.normal(0.0, pow(self.hnodes, -0.5), (self.hnodes, self.inodes))  # слой input-hidden
         self.who = np.random.normal(0.0, pow(self.onodes, -0.5), (self.onodes, self.hnodes))  # слой hidden-output
-        self.lr = learningrate  # шаг обучения
+        self.lr = learning_rate  # шаг обучения
         # сигмоида
         self.activation_function = lambda x: sp.expit(x)
         pass
@@ -58,5 +59,46 @@ class NeuralNetwork:  # это класс
 
 
 # создаем объект класса
-net = NeuralNetwork(3, 3, 3, 0.3)
-print(net.query([1.0, 0.5, -1.5]))
+input_nodes = 20
+hidden_nodes = 15  # экспериментируем
+output_nodes = 20
+learning_rate = 0.1
+
+net = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+
+# тренируем
+epochs = 1 # количество циклов обучения
+
+for step in range(epochs):
+    for phrase in dm.train_set():
+        input = phrase[0]
+        target = phrase[1]
+        net.train(input, target)
+        pass
+    pass
+
+scorecard = [] # 1 - истина, 0 - ложь
+for phrase in dm.query_set():
+    output = net.query(phrase[0])
+    correct_label = phrase[1] # это для вычисления доли ошибок
+    # формирую вариант выхода, идентичый ошидаемому, чтобы вычислить долю ошибки
+    label = []
+    for el in output:
+        if el > 0.5:
+            label.append(0.99)
+        else:
+            label.append(0.01)
+    if label == correct_label:
+        scorecard.append(1)
+    else:
+        scorecard.append(0)
+        pass
+    pass
+
+scorecard = np.array(scorecard)
+performance = scorecard.sum() / len(scorecard)
+print('Доля ошибок: ', performance)
+
+
+# надо чтобы массив на вход был всегда одинакового размера (добивать нулями?)
+# тогда и таргет тоже поменять

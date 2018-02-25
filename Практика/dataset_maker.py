@@ -89,7 +89,9 @@ def query_base():
 
                  CREATE TABLE query
                  (phrase TEXT, 
-                 vectorization);
+                 vectorization,
+                 target TEXT, 
+                 arr_target);
                        """)
     for i in range(len(query)):
         c.execute('''INSERT INTO query (phrase, vectorization)
@@ -140,7 +142,7 @@ def vec_train(): # вставляю в базу данных векторизо�
     conn = sqlite3.connect('characters.db')
     c = conn.cursor()
     c.execute('''SELECT target
-                    FROM train
+                 FROM train
                     ''')
     result = c.fetchall()
     for line in result:
@@ -154,8 +156,60 @@ def vec_train(): # вставляю в базу данных векторизо�
                      SET arr_target = (?)
                      WHERE target = (?)''',
                   [' '.join(vector), line[0]])
-    c.execute('''SELECT target, arr_target
-                 FROM train
-                            ''')
     conn.commit()
     conn.close()
+
+def vec_query(): # вставляю в базу данных векторизованный вариант тестовой выборки
+    conn = sqlite3.connect('characters.db')
+    c = conn.cursor()
+    c.execute('''SELECT target
+                 FROM query
+                        ''')
+    result = c.fetchall()
+    for line in result:
+        vector = []
+        for el in line[0]:
+            if el == ' ':
+                vector.append('0.01')
+            else:
+                vector.append('0.99')
+        c.execute('''UPDATE query 
+                     SET arr_target = (?)
+                     WHERE target = (?)''',
+                  [' '.join(vector), line[0]])
+    conn.commit()
+    conn.close()
+
+
+# ПОДГОТОВКА ДАННЫХ ДЛЯ ОБУЧЕНИЯ И ТЕСТА
+
+# массив кортежей ([дано], [цель]), тренировочные данные
+def train_set():
+    conn = sqlite3.connect('characters.db')
+    c = conn.cursor()
+    c.execute('''SELECT vectorization, arr_target
+                 FROM train
+                            ''')
+    result = c.fetchall()
+    train_arr = [] # словарь - чтобы порядок фраз не был фиксированным
+    for line in result:
+        train_arr.append((
+            np.array([float(x) for x in line[0].split()]),
+            np.array([float(x) for x in line[1].split()])))
+    return train_arr
+
+
+# массив кортежей ([дано], [цель])
+def query_set():
+    conn = sqlite3.connect('characters.db')
+    c = conn.cursor()
+    c.execute('''SELECT vectorization, arr_target
+                 FROM query
+                                ''')
+    result = c.fetchall()
+    query_arr = []  # словарь - чтобы порядок фраз не был фиксированным
+    for line in result:
+        query_arr.append((
+            np.array([float(x) for x in line[0].split()]),
+            np.array([float(x) for x in line[1].split()])))
+    return query_arr
