@@ -213,3 +213,67 @@ def query_set():
             np.array([float(x) for x in line[0].split()]),
             np.array([float(x) for x in line[1].split()])))
     return query_arr
+
+
+def find_max():  # чтобы формировать нужное число узлов инпута и аутпута
+    conn = sqlite3.connect('characters.db')
+    c = conn.cursor()
+    c.execute("""SELECT vectorization, arr_target
+                 FROM train
+                   """)
+
+    result = c.fetchall()
+    input = [len(x[0].split()) for x in result]
+    target = [len(x[1].split()) for x in result]
+
+    c.execute("""SELECT vectorization, arr_target
+                 FROM query
+            """)
+    result = c.fetchall()
+    input2 = [len(x[0].split()) for x in result]
+    target2 = [len(x[1].split()) for x in result]
+    max_input = max([max(input), max(input2)])
+    max_target = max([max(target), max(target2)])
+    return (max_input, max_target)
+
+
+def appendix():
+    conn = sqlite3.connect('characters.db')
+    c = conn.cursor()
+    c.execute('''SELECT vectorization, arr_target, target
+                 FROM train
+                    ''')
+    result = c.fetchall()
+    for line in result:
+        text = line[2]
+        vectorization = line[0]
+        arr_target = line[1]
+        vectorization += ' 0.01' * (find_max()[0] - len(vectorization.split()))
+        arr_target += ' 0.01' * (find_max()[1] - len(arr_target.split()))
+        c.execute('''UPDATE train
+                      SET vectorization = (?),
+                      arr_target = (?)
+                      WHERE target = (?)
+                                    ''',
+                   [vectorization, arr_target, text])
+    c.execute('''SELECT vectorization, arr_target, target
+                     FROM query
+                        ''')
+    result2 = c.fetchall()
+    for line in result2:
+        text = line[2]
+        vectorization = line[0]
+        arr_target = line[1]
+        vectorization += ' 0.01' * (find_max()[0] - len(vectorization.split()))
+        arr_target += ' 0.01' * (find_max()[1] - len(arr_target.split()))
+        c.execute('''UPDATE query
+                          SET vectorization = (?),
+                          arr_target = (?)
+                          WHERE target = (?)
+                                        ''',
+                  [vectorization, arr_target, text])
+    c.execute('''SELECT target, vectorization, arr_target
+                     FROM query
+                        ''')
+    conn.commit()
+    conn.close()
