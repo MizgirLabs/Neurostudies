@@ -11,38 +11,53 @@ class neuralNetwork:
         self.inodes = inputnodes
         self.hnodes = hiddennodes
         self.onodes = outputnodes
+        # нормальное распределение Гаусса (для более сложной системы весов, см. док
+        # аргументы - центр нормального распределения, стандартная девиация (ширина дистрибуции),
+        # кортеж параметров (строка, столбец)
+        # pow(число, его степень)
         self.wih = numpy.random.normal(0.0, pow(self.inodes, -0.5), (self.hnodes, self.inodes))  # !!! seed
         self.who = numpy.random.normal(0.0, pow(self.hnodes, -0.5), (self.onodes, self.hnodes))  # !!! seed
         self.lr = learningrate
+        # сигмоида
         self.activation_function = lambda x: scipy.special.expit(x)
         pass
 
+    # метод тренировки
     def train(self, inputs_list, targets_list):
+        # превращаем список в двумерный массив
         inputs = numpy.array(inputs_list, ndmin=2).T
-        targets = numpy.array(targets_list, ndmin=2).T
-        hidden_inputs = numpy.dot(self.wih, inputs)
-        hidden_outputs = self.activation_function(hidden_inputs)
+        targets = numpy.array(targets_list, ndmin=2).T  # !!!
+        hidden_inputs = numpy.dot(self.wih, inputs)   # получаем матрицу сигналов на вход для скрытого слоя
+        hidden_outputs = self.activation_function(hidden_inputs)   # готовый аутпут
+        # то же самое для вызодного слоя
         final_inputs = numpy.dot(self.who, hidden_outputs)
         final_outputs = self.activation_function(final_inputs)
+        # ошибка выходного слоя (целевое значение - фактическое значение)
         output_errors = targets - final_outputs
         hidden_errors = numpy.dot(self.who.T, output_errors)
+        # обновление весов межку скрытым и выходным слоями (тоже по формуле)
         self.who += self.lr * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)),
                                         numpy.transpose(hidden_outputs))
+        # обновление весов между входным и скрытым слоями
         self.wih += self.lr * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)),
                                         numpy.transpose(inputs))
         pass
 
+    # метод непосредсивенного использования
     def query(self, inputs_list):
+        # превращаем список в двумерный массив
         inputs = numpy.array(inputs_list, ndmin=2).T
-        hidden_inputs = numpy.dot(self.wih, inputs)
-        hidden_outputs = self.activation_function(hidden_inputs)
+        hidden_inputs = numpy.dot(self.wih, inputs)  # получаем матрицу сигналов на вход для скрытого слоя
+        hidden_outputs = self.activation_function(hidden_inputs)  # готовый аутпут
         final_inputs = numpy.dot(self.who, hidden_outputs)
+        # то же самое для выходного слоя
         final_outputs = self.activation_function(final_inputs)
         return final_outputs
 
 
+# создаем объект класса
 input_nodes = dm.find_max()[0]
-hidden_nodes = 150
+hidden_nodes = 150  # экспериментируем
 output_nodes = dm.find_max()[1]
 
 learning_rate = 0.1
