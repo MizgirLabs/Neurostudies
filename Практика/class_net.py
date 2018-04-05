@@ -1,24 +1,23 @@
-import numpy as np
+import numpy
 import scipy.special  # для функции сигмоиды
 import dataset_maker as dm
 
-
-class NeuralNetwork:  # это класс
+class neuralNetwork:
 
     # инициализация класса
-    # эта функция нужна для того, чтобы подготовить объект перед первым вызовом
+    # готовим объект перед первым вызовом
     # тут создаем базовые переменные
-    def __init__(self, input_nodes, hidden_nodes, output_nodes, learning_rate):  # self - обязательный атрибут метода в питоне
-        self.inodes = input_nodes
-        self.hnodes = hidden_nodes
-        self.onodes = output_nodes
+    def __init__(self, inputnodes, hiddennodes, outputnodes, learningrate):
+        self.inodes = inputnodes
+        self.hnodes = hiddennodes
+        self.onodes = outputnodes
         # нормальное распределение Гаусса (для более сложной системы весов, см. док
         # аргументы - центр нормального распределения, стандартная девиация (ширина дистрибуции),
         # кортеж параметров (строка, столбец)
         # pow(число, его степень)
-        self.wih = np.random.normal(0.0, pow(self.inodes, -0.5), (self.hnodes, self.inodes))  # слой input-hidden
-        self.who = np.random.normal(0.0, pow(self.hnodes, -0.5), (self.onodes, self.hnodes))  # слой hidden-output
-        self.lr = learning_rate  # шаг обучения
+        self.wih = numpy.random.normal(0.0, pow(self.inodes, -0.5), (self.hnodes, self.inodes))  # !!! seed
+        self.who = numpy.random.normal(0.0, pow(self.hnodes, -0.5), (self.onodes, self.hnodes))  # !!! seed
+        self.lr = learningrate
         # сигмоида
         self.activation_function = lambda x: scipy.special.expit(x)
         pass
@@ -26,81 +25,81 @@ class NeuralNetwork:  # это класс
     # метод тренировки
     def train(self, inputs_list, targets_list):
         # превращаем список в двумерный массив
-        inputs = np.array(inputs_list, ndmin=2).T
-        targets = np.array(targets_list, ndmin=2).T  # !!!
-        hidden_inputs = np.dot(self.wih, inputs)  # получаем матрицу сигналов на вход для скрытого слоя
-        hidden_outputs = self.activation_function(hidden_inputs)    # готовый аутпут
+        inputs = numpy.array(inputs_list, ndmin=2).T
+        targets = numpy.array(targets_list, ndmin=2).T  # !!!
+        hidden_inputs = numpy.dot(self.wih, inputs)   # получаем матрицу сигналов на вход для скрытого слоя
+        hidden_outputs = self.activation_function(hidden_inputs)   # готовый аутпут
         # то же самое для вызодного слоя
-        final_inputs = np.dot(self.who, hidden_outputs)
+        final_inputs = numpy.dot(self.who, hidden_outputs)
         final_outputs = self.activation_function(final_inputs)
         # ошибка выходного слоя (целевое значение - фактическое значение)
         output_errors = targets - final_outputs
-        # ошибка скрытого слоя - это ошибка выходного слоя, поделенная на веса, перекомбинированные
-                                                # на нейроны скрытого слоя (по формуле errors_hidden)
-        hidden_errors = np.dot(self.who.T, output_errors)
+        hidden_errors = numpy.dot(self.who.T, output_errors)
         # обновление весов межку скрытым и выходным слоями (тоже по формуле)
-        self.who += self.lr * np.dot((output_errors * final_outputs * (1.0 - final_outputs)),
-                                     np.transpose(hidden_outputs))
+        self.who += self.lr * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)),
+                                        numpy.transpose(hidden_outputs))
         # обновление весов между входным и скрытым слоями
-        self.wih += self.lr * np.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)),
-                                     np.transpose(inputs))
+        self.wih += self.lr * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)),
+                                        numpy.transpose(inputs))
         pass
 
     # метод непосредсивенного использования
     def query(self, inputs_list):
         # превращаем список в двумерный массив
-        inputs = np.array(inputs_list, ndmin=2).T
-        hidden_inputs = np.dot(self.wih, inputs)  # получаем матрицу сигналов на вход для скрытого слоя
+        inputs = numpy.array(inputs_list, ndmin=2).T
+        hidden_inputs = numpy.dot(self.wih, inputs)  # получаем матрицу сигналов на вход для скрытого слоя
         hidden_outputs = self.activation_function(hidden_inputs)  # готовый аутпут
-        # то же самое для вызодного слоя
-        final_inputs = np.dot(self.who, hidden_outputs)
+        final_inputs = numpy.dot(self.who, hidden_outputs)
+        # то же самое для выходного слоя
         final_outputs = self.activation_function(final_inputs)
         return final_outputs
 
 
 # создаем объект класса
-i_nodes = 3
-h_nodes = 3  # экспериментируем
-o_nodes = 3
-learn_rate = 3
+input_nodes = dm.find_max()[0]
+hidden_nodes = 150  # экспериментируем
+output_nodes = dm.find_max()[1]
 
-net = NeuralNetwork(i_nodes, h_nodes, o_nodes, learn_rate)
+learning_rate = 0.1
 
-x = net.query(np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]))
+n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
 # тренируем
-# epochs = 1 # количество циклов обучения
-#
-# for step in range(epochs):
-#     for phrase in dm.train_set():
-#         input = phrase[0]
-#         target = phrase[1]
-#         net.train(input, target)
-#         pass
-#     pass
-#
-# scorecard = [] # 1 - истина, 0 - ложь
-# for phrase in dm.query_set():
-#     output = net.query(phrase[0])
-#     correct_label = phrase[1] # это для вычисления доли ошибок
-#     # формирую вариант выхода, идентичый ошидаемому, чтобы вычислить долю ошибки
-#     label = []
-#     for el in output:
-#         if el > 0.5:
-#             label.append(0.99)
-#         else:
-#             label.append(0.01)
-#     if label == correct_label:
-#         scorecard.append(1)
-#     else:
-#         scorecard.append(0)
-#         pass
-#     pass
-#
-# scorecard = np.array(scorecard)
-# performance = scorecard.sum() / len(scorecard)
-# print('Доля ошибок: ', performance)
+epochs = 100  # количество циклов обучения
 
+for step in range(epochs):
+    for phrase in dm.train_set():
+        input = phrase[0]
+        target = phrase[1]
+        n.train(input, target)
+        pass
+    pass
 
-# надо чтобы массив на вход был всегда одинакового размера (добивать нулями?)
-# тогда и таргет тоже поменять
+scorecard = []  # 1 - истина, 0 - ложь
+sentence_match = []
+for phrase in dm.query_set():
+    output = n.query(phrase[0])
+    correct_label = phrase[1]  # это для вычисления доли ошибок
+    # формирую вариант выхода, идентичый ожидаемому, чтобы вычислить долю ошибки
+    label = []
+    for el in output:
+        if el > 0.5:
+            label.append(0.99)
+        else:
+            label.append(0.01)
+    match = len([1 for i in range(len(label)) if label[i] == correct_label[i]]) / len(label)
+    sentence_match.append(match)
+    label = ' '.join(map(str, label)) + ' 0.01' * (output_nodes - len(label))
+    print('n:', label, '\n', 'c:', ' '.join(map(str, correct_label)), '\n', '\n')
+    if ' '.join(map(str, label)) == ' '.join(map(str, correct_label)):
+        scorecard.append(1)
+    else:
+        scorecard.append(0)
+        pass
+    pass
+
+scorecard = numpy.array(scorecard)
+performance = scorecard.sum() / len(scorecard)
+sentence_match = sum(sentence_match) / len(sentence_match)
+print('Accuracy (amount of full match): ', performance)
+print('Sentence match: ', sentence_match * 100, '%')
