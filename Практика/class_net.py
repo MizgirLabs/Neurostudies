@@ -57,7 +57,7 @@ class neuralNetwork:
 
 # создаем объект класса
 input_nodes = dm.find_max()[0]
-hidden_nodes = 150  # экспериментируем
+hidden_nodes = 350  # экспериментируем
 output_nodes = dm.find_max()[1]
 
 learning_rate = 0.1

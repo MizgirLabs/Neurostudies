@@ -1,0 +1,12 @@
+query:  http://www.studychinese.ru/lessons/12/51/
+
+train: http://www.studychinese.ru/lessons/12/50/
+http://www.studychinese.ru/lessons/12/53/
+http://www.studychinese.ru/lessons/12/54/
+http://www.studychinese.ru/lessons/12/55/
+http://buyilehu.org/reading/moy-uchitel-kalligrafii
+http://buyilehu.org/reading/navestit-druga-v-kitae
+http://buyilehu.org/reading/moi-druzya
+http://buyilehu.org/reading/moya-semya
+http://buyilehu.org/reading/pro-druga
+http://buyilehu.org/reading/pro-shkolnicu-lili

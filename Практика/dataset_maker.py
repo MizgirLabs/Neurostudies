@@ -1,7 +1,11 @@
-# Всего различных иероглифов: 250
-# Из них в тренировочной выборке: 192
-# В тестовой: 58
-# таблицы в базе данных: characters, query, train
+# Таблицы в базе данных: characters, query, train
+
+# ЧТО ДЕЛАТЬ:
+# 1. Добавить информацию в add_data
+# 2. Пересчитать иероглифы в character_base
+#
+#
+
 
 import sqlite3
 import random
@@ -53,16 +57,13 @@ def characters_base():
         c.execute('''
         INSERT INTO characters (character, frequency, sample, normalized_sample) 
         VALUES (?, ?, ?, ?)
-            ''', [key, d[key], d[key] + rand_sample[i], ((d[key] + rand_sample[i]) / 55 * 0.99) + 0.01])
+            ''', [key, d[key], d[key] + rand_sample[i], ((d[key] + rand_sample[i]) / 105 * 0.99) + 0.01])
     c.execute('''SELECT character, frequency, sample, normalized_sample
                 FROM characters 
                 ORDER BY frequency
                 ''')
-
-    result = c.fetchall()
     conn.commit()
     conn.close()
-
 
 # векторизация тестовой выборки
 # cоздание новой таблицы - фраза|векторизованный вариант
@@ -110,6 +111,8 @@ def train_base():
     with open('train.txt', 'r', encoding='UTF-8') as t:
         train = t.read().split()
     train[0] = train[0].replace('\ufeff', '')
+    with open('train_spaces.txt', 'r', encoding='UTF-8') as t2:
+        spaces = t2.read().split('\n')
     t_vectorized = []
     for row in train:
         line = []
@@ -133,10 +136,9 @@ def train_base():
     for i in range(len(train)):
         c.execute('''INSERT INTO train (phrase, vectorization, target)
                     VALUES (?, ?, ?)''',
-                  [train[i], ' '.join(map(str, t_vectorized[i])), train[i]])
+                  [train[i], ' '.join(map(str, t_vectorized[i])), spaces[i]])
     conn.commit()
     conn.close()
-
 
 def vec_train(): # вставляю в базу данных векторизованный вариант обучающей выборки
     conn = sqlite3.connect('characters.db')
@@ -214,6 +216,7 @@ def query_set():
             np.array([float(x) for x in line[1].split()])))
     return query_arr
 
+# готовим векторы к подаче в инпут
 
 def find_max():  # чтобы формировать нужное число узлов инпута и аутпута
     conn = sqlite3.connect('characters.db')
@@ -237,7 +240,7 @@ def find_max():  # чтобы формировать нужное число у�
     return (max_input, max_target)
 
 
-def appendix():
+def appendix():  # чтобы длины инпутов совпадали
     conn = sqlite3.connect('characters.db')
     c = conn.cursor()
     c.execute('''SELECT vectorization, arr_target, target
