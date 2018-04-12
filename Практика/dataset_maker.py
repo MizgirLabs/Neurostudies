@@ -13,7 +13,6 @@ import numpy as np
 
 def dict_maker():
     d = {}  # ключ - иероглиф, значение - количество повторений
-
     with open('query.txt', 'r', encoding='utf-8') as query:
         query_data = query.read()
     query_arr = query_data.split('\n')
@@ -75,13 +74,15 @@ def query_base():
     with open('query.txt', 'r', encoding='UTF-8') as q:
         query = q.read().split()
     q_vectorized = []
+    with open('query_spaces.txt', 'r', encoding='UTF-8') as t2:
+        spaces = t2.read().split('\n')
     for row in query:
         line = []
         for char in row:
             c.execute('''SELECT normalized_sample
                     FROM characters 
                     WHERE character == ?
-                    ''', [char])
+                    ''', char)
             result = c.fetchall()
             line.append(result[0][0])
         q_vectorized.append(line)
@@ -95,9 +96,9 @@ def query_base():
                  arr_target);
                        """)
     for i in range(len(query)):
-        c.execute('''INSERT INTO query (phrase, vectorization)
-                    VALUES (?, ?)''',
-                  [query[i], ' '.join(map(str, q_vectorized[i]))])
+        c.execute('''INSERT INTO query (phrase, vectorization, target)
+                    VALUES (?, ?, ?)''',
+                  [query[i], ' '.join(map(str, q_vectorized[i])), spaces[i]])
     conn.commit()
     conn.close()
 
@@ -193,7 +194,7 @@ def train_set():
                  FROM train
                             ''')
     result = c.fetchall()
-    train_arr = [] # словарь - чтобы порядок фраз не был фиксированным
+    train_arr = []  # словарь - чтобы порядок фраз не был фиксированным
     for line in result:
         train_arr.append((
             np.array([float(x) for x in line[0].split()]),
@@ -280,3 +281,15 @@ def appendix():  # чтобы длины инпутов совпадали
                         ''')
     conn.commit()
     conn.close()
+
+def train_update():
+    characters_base()
+    train_base()
+    vec_train()
+
+def query_update():
+    query_base()
+    vec_query()
+
+def preparation():
+    appendix()

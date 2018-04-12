@@ -43,7 +43,7 @@ class neuralNetwork:
                                         numpy.transpose(inputs))
         pass
 
-    # метод непосредсивенного использования
+    # метод непосредственного использования
     def query(self, inputs_list):
         # превращаем список в двумерный массив
         inputs = numpy.array(inputs_list, ndmin=2).T
@@ -57,15 +57,15 @@ class neuralNetwork:
 
 # создаем объект класса
 input_nodes = dm.find_max()[0]
-hidden_nodes = 350  # экспериментируем
+hidden_nodes = 280  # экспериментируем
 output_nodes = dm.find_max()[1]
 
-learning_rate = 0.1
+learning_rate = 0.05
 
 n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
 # тренируем
-epochs = 100  # количество циклов обучения
+epochs = 500  # количество циклов обучения
 
 for step in range(epochs):
     for phrase in dm.train_set():
@@ -83,7 +83,7 @@ for phrase in dm.query_set():
     # формирую вариант выхода, идентичый ожидаемому, чтобы вычислить долю ошибки
     label = []
     for el in output:
-        if el > 0.5:
+        if el > 0.55:
             label.append(0.99)
         else:
             label.append(0.01)
