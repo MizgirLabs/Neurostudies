@@ -40,7 +40,7 @@ epochs = 100
 Фраз в тренировочной выборке: 875
 
 Accuracy: 0.10211337868480726
-Sentence match: 88.93862001943627%
+Sentence match: 88.93862001943627 %
 
 
 Пятая попытка:
@@ -48,7 +48,7 @@ hidden_nodes = 400
 learning_rate = 0.1
 epochs = 200 
 Accuracy: 0.12484353741496598
-Sentence match: 89.03626822157428%
+Sentence match: 89.03626822157428 %
 
 
 Шестая попытка:
@@ -56,8 +56,15 @@ hidden_nodes = 400
 learning_rate = 0.085
 epochs = 250
 Accuracy: 0.12256689342403627
-Sentence match: 89.12077745383861%
+Sentence match: 89.12077745383861 %
 
+Седьмая попытка:
+После валидации параметров
+hidden_nodes = 550
+epochs = 270
+learning_rate = 0.18
+Accuracy: 0.13508390022675737
+Sentence match: 88.95852283770644 %
 
 
 1) исторический очерк + задача словоделения и существующие методы (диплом Марата) - вводная часть

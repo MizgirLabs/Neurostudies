@@ -8,16 +8,6 @@ import numpy as np
 
 def dict_maker():
     d = {}  # ключ - иероглиф, значение - количество повторений
-    with open('query.txt', 'r', encoding='utf-8') as query:
-        query_data = query.read()
-    query_arr = query_data.split('\n')
-    for phrase in query_arr:
-        for char in phrase:
-            if char not in d:
-                d[char] = 1
-            else:
-                d[char] += 1
-
     with open('train.txt', 'r', encoding='utf-8') as train:
         train_data = train.read()
     train_arr = train_data.split('\n')
@@ -56,44 +46,6 @@ def characters_base():
                 FROM characters 
                 ORDER BY frequency
                 ''')
-    conn.commit()
-    conn.close()
-
-# векторизация тестовой выборки
-# cоздание новой таблицы - фраза|векторизованный вариант
-# векторизованная строка - ТЕКСТ!
-
-def query_base():
-    conn = sqlite3.connect('characters.db')
-    c = conn.cursor()
-    with open('query.txt', 'r', encoding='UTF-8') as q:
-        query = q.read().split()
-    q_vectorized = []
-    with open('query_spaces.txt', 'r', encoding='UTF-8') as t2:
-        spaces = t2.read().split('\n')
-    for row in query:
-        line = []
-        for char in row:
-            c.execute('''SELECT normalized_sample
-                    FROM characters 
-                    WHERE character == ?
-                    ''', char)
-            result = c.fetchall()
-            line.append(result[0][0])
-        q_vectorized.append(line)
-
-    c.executescript("""DROP TABLE IF EXISTS query;
-
-                 CREATE TABLE query
-                 (phrase TEXT, 
-                 vectorization,
-                 target TEXT, 
-                 arr_target);
-                       """)
-    for i in range(len(query)):
-        c.execute('''INSERT INTO query (phrase, vectorization, target)
-                    VALUES (?, ?, ?)''',
-                  [query[i], ' '.join(map(str, q_vectorized[i])), spaces[i]])
     conn.commit()
     conn.close()
 
@@ -157,27 +109,6 @@ def vec_train(): # вставляю в базу данных векторизо�
     conn.commit()
     conn.close()
 
-def vec_query(): # вставляю в базу данных векторизованный вариант тестовой выборки
-    conn = sqlite3.connect('characters.db')
-    c = conn.cursor()
-    c.execute('''SELECT target
-                 FROM query
-                        ''')
-    result = c.fetchall()
-    for line in result:
-        vector = []
-        for el in line[0]:
-            if el == ' ':
-                vector.append('0.01')
-            else:
-                vector.append('0.99')
-        c.execute('''UPDATE query 
-                     SET arr_target = (?)
-                     WHERE target = (?)''',
-                  [' '.join(vector), line[0]])
-    conn.commit()
-    conn.close()
-
 
 # ПОДГОТОВКА ДАННЫХ ДЛЯ ОБУЧЕНИЯ И ТЕСТА
 
@@ -200,21 +131,6 @@ def train_set():
     random.shuffle(train_arr)
     return train_arr
 
-# массив кортежей ([дано], [цель])
-def query_set():
-    conn = sqlite3.connect('characters.db')
-    c = conn.cursor()
-    c.execute('''SELECT vectorization, arr_target
-                 FROM query
-                                ''')
-    result = c.fetchall()
-    query_arr = []  # словарь - чтобы порядок фраз не был фиксированным
-    for line in result:
-        query_arr.append((
-            np.array([float(x) for x in line[0].split()]),
-            np.array([float(x) for x in line[1].split()])))
-    return query_arr
-
 # готовим векторы к подаче в инпут
 
 def find_max():  # чтобы формировать нужное число узлов инпута и аутпута
@@ -227,15 +143,8 @@ def find_max():  # чтобы формировать нужное число у�
     result = c.fetchall()
     input = [len(x[0].split()) for x in result]
     target = [len(x[1].split()) for x in result]
-
-    c.execute("""SELECT vectorization, arr_target
-                 FROM query
-            """)
-    result = c.fetchall()
-    input2 = [len(x[0].split()) for x in result]
-    target2 = [len(x[1].split()) for x in result]
-    max_input = max([max(input), max(input2)])
-    max_target = max([max(target), max(target2)])
+    max_input = max(input)
+    max_target = max(target)
     return (max_input, max_target)
 
 
@@ -258,36 +167,13 @@ def appendix():  # чтобы длины инпутов совпадали
                       WHERE target = (?)
                                     ''',
                    [vectorization, arr_target, text])
-    c.execute('''SELECT vectorization, arr_target, target
-                     FROM query
-                        ''')
-    result2 = c.fetchall()
-    for line in result2:
-        text = line[2]
-        vectorization = line[0]
-        arr_target = line[1]
-        vectorization += ' 0.01' * (find_max()[0] - len(vectorization.split()))
-        arr_target += ' 0.01' * (find_max()[1] - len(arr_target.split()))
-        c.execute('''UPDATE query
-                          SET vectorization = (?),
-                          arr_target = (?)
-                          WHERE target = (?)
-                                        ''',
-                  [vectorization, arr_target, text])
-    c.execute('''SELECT target, vectorization, arr_target
-                     FROM query
-                        ''')
     conn.commit()
     conn.close()
+
 
 def train_update():
     print('Updating data...')
     characters_base()
     train_base()
     vec_train()
-    appendix()
-
-def query_update():
-    query_base()
-    vec_query()
     appendix()

@@ -1,13 +1,15 @@
+# Однослойная нерекуррентная нейросеть с кросс-валидацией
+
+
 import numpy as np
 import sqlite3
 import dataset_maker as dm
 import scipy.special  # для функции сигмоиды
-import matplotlib.pyplot as plt
+import plotting
 
-#  здесь присутствует кросс-валидация в виде скользящей оценки
-#  TODO: сделать с помощью КВ оценку обобщающей спопосбности
+# создание класса
 
-class neuralNetwork:
+class NeuralNetwork:
 
     # инициализация класса
     # готовим объект перед первым вызовом
@@ -62,9 +64,55 @@ class neuralNetwork:
         return final_outputs
 
 
+# поиск оптимальных гиперпараметров
+# каждый параметр заменяем на переменную, arr - набор вариантов переменных
+
+# пытаемся подобрать оптимальное число тренировочных циклов
+
+def epochs_optimisation(arr):
+    sm = []
+    acc = []
+    print('Validating training cycles...')
+    for i in arr:
+        print(i, ' cycles, max: ', max(arr))
+        accuracies, sentence_matches, av_accuracy, av_sentence_match = complete_cv(i)
+        sm.append(av_sentence_match)
+        acc.append(av_accuracy)
+    print('Plotting...')
+    plotting.epochs(acc, sm, arr)
+
+# подбираем количество нейронов в скрытом слое
+
+def hidden_nodes_optinization(arr):
+    sm = []
+    acc = []
+    print('Validating hidden nodes...')
+    for i in arr:
+        print(i, ' nodes, max: ', max(arr))
+        accuracies, sentence_matches, av_accuracy, av_sentence_match = complete_cv(i)
+        sm.append(av_sentence_match)
+        acc.append(av_accuracy)
+    print('Plotting...')
+    plotting.hidden_nodes(acc, sm, arr)
+
+# подбираем шаг обучения
+
+def learning_rate_optinization(arr):
+    sm = []
+    acc = []
+    print('Validating learning rate...')
+    for i in arr:
+        print(i, ' rate, max: ', max(arr))
+        accuracies, sentence_matches, av_accuracy, av_sentence_match = complete_cv(i)
+        sm.append(av_sentence_match)
+        acc.append(av_accuracy)
+    print('Plotting...')
+    plotting.learning_rate(acc, sm, arr)
+
+
 # функция тренировки для вызова в КВ цикле
 
-def train(n, train_data, cycles):
+def learn(n, train_data, cycles):
     for step in range(cycles):
         for phrase in train_data:
             input = phrase[0]
@@ -102,25 +150,8 @@ def test(n, query_data):
     sentence_match = sum(sentence_match) / len(sentence_match)
     return accuracy, sentence_match
 
-# графики по метрикам для наглядности
 
-def plotting_ccv(x, y1, y2):
-    plt.plot(x, y1)
-    plt.title('Accuracy')
-    plt.xlabel('ITERATION')
-    plt.ylabel('SCORE')
-    plt.savefig('total_accuracy.png', format='png', dpi=100)
-    plt.clf()
-    plt.plot(x, y2)
-    plt.title('Sentence_match')
-    plt.xlabel('ITERATION')
-    plt.ylabel('SCORE')
-    plt.savefig('total_smatch.png', format='png', dpi=100)
-
-
-# скользящий контроль - обучаю 7 раз на разных блоках, смотрю среднюю оценку
-# 875 предложений, 7 блоков = 125 предложений в блоке
-# 750 строк обучащей выборки, 125 тестовой
+# кросс-валидация, скользящий контроль - обучаю 7 раз на разных блоках, смотрю среднюю оценку
 
 def complete_cv():
     data = dm.train_set()
@@ -138,20 +169,20 @@ def complete_cv():
         print('Perfoming iteration ' + str(i+1) + '/7')
         # создаем объект класса
         input_nodes = dm.find_max()[0]
-        hidden_nodes = 400  # экспериментируем
+        hidden_nodes = 550  # экспериментируем
         output_nodes = dm.find_max()[1]
 
-        learning_rate = 0.085
+        learning_rate = 0.18
 
-        n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+        n = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
-        epochs = 250  # количество циклов обучения
+        epochs = 270  # количество циклов обучения
 
         query_data = data[cv_lower:cv_upper]
         train_data = data[:cv_lower] + data[cv_upper:]
 
         print('Training...')
-        train(n, train_data, epochs)
+        learn(n, train_data, epochs)
         print('Trained succesfully')
         accuracy, sentence_match = test(n, query_data)
         print('Tested successfully')
@@ -168,12 +199,15 @@ def complete_cv():
     return accuracies, sentence_matches, av_accuracy, av_sentence_match
 
 
-accuracies, sentence_matches, av_accuracy, av_sentence_match = complete_cv()
+# посмотрим, что получается
 
-xes = [x for x in range(1, 8)]
+def performance():
+    accuracies, sentence_matches, av_accuracy, av_sentence_match = complete_cv()
+    xes = [x for x in range(1, 8)]
+    print('Plotting...')
+    plotting.ccv(xes, accuracies, sentence_matches)
+    print('Final score:\n Accuracy: ' + str(av_accuracy) + '\n Sentence match: ' + str(av_sentence_match * 100) + ' %\n\n')
 
-print('Plotting...')
 
-plotting_ccv(xes, accuracies, sentence_matches)
-
-print('Final score:\n Accuracy: ' + str(av_accuracy) + '\n Sentence match: ' + str(av_sentence_match * 100) + '%\n\n')
+if __name__ == '__main__':
+    performance()
