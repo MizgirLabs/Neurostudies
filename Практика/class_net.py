@@ -75,6 +75,7 @@ for step in range(epochs):
         pass
     pass
 
+
 scorecard = []  # 1 - истина, 0 - ложь
 sentence_match = []
 for phrase in dm.query_set():

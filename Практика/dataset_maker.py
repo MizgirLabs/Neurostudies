@@ -3,8 +3,8 @@
 # ЧТО ДЕЛАТЬ:
 # 1. Добавить информацию в add_data
 # 2. Пересчитать иероглифы в character_base
-#
-#
+
+
 
 
 import sqlite3
@@ -56,7 +56,7 @@ def characters_base():
         c.execute('''
         INSERT INTO characters (character, frequency, sample, normalized_sample) 
         VALUES (?, ?, ?, ?)
-            ''', [key, d[key], d[key] + rand_sample[i], ((d[key] + rand_sample[i]) / 105 * 0.99) + 0.01])
+            ''', [key, d[key], d[key] + rand_sample[i], ((d[key] + rand_sample[i]) / 317 * 0.99) + 0.01])
     c.execute('''SELECT character, frequency, sample, normalized_sample
                 FROM characters 
                 ORDER BY frequency
