@@ -1,15 +1,10 @@
-# Таблицы в базе данных: characters, query, train
-
-# ЧТО ДЕЛАТЬ:
-# 1. Добавить информацию в add_data
-# 2. Пересчитать иероглифы в character_base
-
-
+# Таблицы в базе данных: characters, query (не нужна), train
 
 
 import sqlite3
 import random
 import numpy as np
+
 
 def dict_maker():
     d = {}  # ключ - иероглиф, значение - количество повторений
@@ -201,8 +196,9 @@ def train_set():
         train_arr.append((
             np.array([float(x) for x in line[0].split()]),
             np.array([float(x) for x in line[1].split()])))
+    random.seed(2)
+    random.shuffle(train_arr)
     return train_arr
-
 
 # массив кортежей ([дано], [цель])
 def query_set():

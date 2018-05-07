@@ -62,34 +62,9 @@ class neuralNetwork:
         return final_outputs
 
 
-# кросс-валидация
-
-def cv_set():
-    print('Preparing data, creating CV blocks...')
-    conn = sqlite3.connect('characters.db')
-    c = conn.cursor()
-    c.execute('''SELECT vectorization, 
-                 arr_target
-                 FROM train
-                            ''')
-    result = c.fetchall()
-    cv_arr = []
-    datablock = []
-    for i in range(len(result)):  # 875
-        if len(datablock) < 124:
-            datablock.append((
-                np.array([float(x) for x in result[i][0].split()]),
-                np.array([float(x) for x in result[i][1].split()])))
-        else:
-            cv_arr.append(datablock)
-            print(str(len(cv_arr)) + ' blocks of 7')
-            datablock = []
-    return cv_arr
-
-
 # функция тренировки для вызова в КВ цикле
 
-def train(object, train_data, cycles):
+def train(n, train_data, cycles):
     for step in range(cycles):
         for phrase in train_data:
             input = phrase[0]
@@ -99,7 +74,7 @@ def train(object, train_data, cycles):
         pass
 
 
-def test(object, query_data):
+def test(n, query_data):
     scorecard = []  # 1 - истина, 0 - ложь
     sentence_match = []
     for phrase in query_data:
@@ -114,7 +89,7 @@ def test(object, query_data):
                 label.append(0.01)
         match = len([1 for i in range(len(label)) if label[i] == correct_label[i]]) / len(label)
         sentence_match.append(match)
-        label = ' '.join(map(str, label)) + ' 0.01' * (output_nodes - len(label))
+        label = ' '.join(map(str, label)) + ' 0.01' * (dm.find_max()[1] - len(label))
         if label == ' '.join(map(str, correct_label)):
             scorecard.append(1)
         else:
@@ -129,14 +104,14 @@ def test(object, query_data):
 
 # графики по метрикам для наглядности
 
-def plotting_ccv(x1, x2, y):
-    plt.plot(x1, y)
+def plotting_ccv(x, y1, y2):
+    plt.plot(x, y1)
     plt.title('Accuracy')
     plt.xlabel('ITERATION')
     plt.ylabel('SCORE')
     plt.savefig('total_accuracy.png', format='png', dpi=100)
     plt.clf()
-    plt.plot(x2, y)
+    plt.plot(x, y2)
     plt.title('Sentence_match')
     plt.xlabel('ITERATION')
     plt.ylabel('SCORE')
@@ -166,25 +141,27 @@ def complete_cv():
         hidden_nodes = 400  # экспериментируем
         output_nodes = dm.find_max()[1]
 
-        learning_rate = 0.1
+        learning_rate = 0.085
 
         n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
-        epochs = 100  # количество циклов обучения
+        epochs = 250  # количество циклов обучения
 
         query_data = data[cv_lower:cv_upper]
         train_data = data[:cv_lower] + data[cv_upper:]
 
-        cv_lower += 125
-        cv_upper += 125
+        print('Training...')
         train(n, train_data, epochs)
         print('Trained succesfully')
         accuracy, sentence_match = test(n, query_data)
         print('Tested successfully')
         print('Accuracy (amount of full match): ', accuracy)
-        print('Sentence match: ', sentence_match * 100, '%\n\n')
+        print('Sentence match: ', sentence_match * 100, '%\n')
         accuracies.append(accuracy)
         sentence_matches.append(sentence_match)
+
+        cv_lower += 125
+        cv_upper += 125
 
     av_accuracy = sum(accuracies) / len(accuracies)
     av_sentence_match = sum(sentence_matches) / len(sentence_matches)
@@ -193,10 +170,10 @@ def complete_cv():
 
 accuracies, sentence_matches, av_accuracy, av_sentence_match = complete_cv()
 
-y = [x for x in range(1,8)]
+xes = [x for x in range(1, 8)]
 
 print('Plotting...')
 
-plotting(accuracies, sentence_matches, y)
+plotting_ccv(xes, accuracies, sentence_matches)
 
-print('Final score:\n Accuracy: ' + str(av_accuracy) + '\n Sentence match: ' + str(av_sentence_match * 100) + '%\n\n)
+print('Final score:\n Accuracy: ' + str(av_accuracy) + '\n Sentence match: ' + str(av_sentence_match * 100) + '%\n\n')
