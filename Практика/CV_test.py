@@ -2,7 +2,10 @@ import numpy as np
 import sqlite3
 import dataset_maker as dm
 import scipy.special  # для функции сигмоиды
+import matplotlib.pyplot as plt
 
+#  здесь присутствует кросс-валидация в виде скользящей оценки
+#  TODO: сделать с помощью КВ оценку обобщающей спопосбности
 
 class neuralNetwork:
 
@@ -18,9 +21,9 @@ class neuralNetwork:
         # кортеж параметров (строка, столбец)
         # pow(число, его степень)
         np.random.seed(0)
-        self.wih = np.random.normal(0.0, pow(self.inodes, -0.5), (self.hnodes, self.inodes))  # !!! seed
+        self.wih = np.random.normal(0.0, pow(self.inodes, -0.5), (self.hnodes, self.inodes))
         np.random.seed(1)
-        self.who = np.random.normal(0.0, pow(self.hnodes, -0.5), (self.onodes, self.hnodes))  # !!! seed
+        self.who = np.random.normal(0.0, pow(self.hnodes, -0.5), (self.onodes, self.hnodes))
         self.lr = learningrate
         # сигмоида
         self.activation_function = lambda x: scipy.special.expit(x)
@@ -84,8 +87,9 @@ def cv_set():
     return cv_arr
 
 
+# функция тренировки для вызова в КВ цикле
 
-def train(train_data, cycles):
+def train(object, train_data, cycles):
     for step in range(cycles):
         for phrase in train_data:
             input = phrase[0]
@@ -95,7 +99,7 @@ def train(train_data, cycles):
         pass
 
 
-def test(query_data):
+def test(object, query_data):
     scorecard = []  # 1 - истина, 0 - ложь
     sentence_match = []
     for phrase in query_data:
@@ -123,35 +127,76 @@ def test(query_data):
     sentence_match = sum(sentence_match) / len(sentence_match)
     return accuracy, sentence_match
 
+# графики по метрикам для наглядности
+
+def plotting_ccv(x1, x2, y):
+    plt.plot(x1, y)
+    plt.title('Accuracy')
+    plt.xlabel('ITERATION')
+    plt.ylabel('SCORE')
+    plt.savefig('total_accuracy.png', format='png', dpi=100)
+    plt.clf()
+    plt.plot(x2, y)
+    plt.title('Sentence_match')
+    plt.xlabel('ITERATION')
+    plt.ylabel('SCORE')
+    plt.savefig('total_smatch.png', format='png', dpi=100)
 
 
-# data = dm.train_set()
-#
-# cv_score = 0
-#
-# for i in range(7):
-#     # создаем объект класса
-#     input_nodes = dm.find_max()[0]
-#     hidden_nodes = 400  # экспериментируем
-#     output_nodes = dm.find_max()[1]
-#
-#     learning_rate = 0.1
-#
-#     n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
-#
-#     epochs = 100  # количество циклов обучения
-#
-#     query_data = data
-#
-#     print(n.wih)
+# скользящий контроль - обучаю 7 раз на разных блоках, смотрю среднюю оценку
+# 875 предложений, 7 блоков = 125 предложений в блоке
+# 750 строк обучащей выборки, 125 тестовой
+
+def complete_cv():
+    data = dm.train_set()
+
+    cv_lower = 0
+    cv_upper = 126
 
 
-input_nodes = 5
-hidden_nodes = 5  # экспериментируем
-output_nodes = 5
-#
-learning_rate = 0.1
+    accuracies = []
+    sentence_matches = []
 
-n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+    print('CV is commenced\n')
 
-#
+    for i in range(7):
+        print('Perfoming iteration ' + str(i+1) + '/7')
+        # создаем объект класса
+        input_nodes = dm.find_max()[0]
+        hidden_nodes = 400  # экспериментируем
+        output_nodes = dm.find_max()[1]
+
+        learning_rate = 0.1
+
+        n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+
+        epochs = 100  # количество циклов обучения
+
+        query_data = data[cv_lower:cv_upper]
+        train_data = data[:cv_lower] + data[cv_upper:]
+
+        cv_lower += 125
+        cv_upper += 125
+        train(n, train_data, epochs)
+        print('Trained succesfully')
+        accuracy, sentence_match = test(n, query_data)
+        print('Tested successfully')
+        print('Accuracy (amount of full match): ', accuracy)
+        print('Sentence match: ', sentence_match * 100, '%\n\n')
+        accuracies.append(accuracy)
+        sentence_matches.append(sentence_match)
+
+    av_accuracy = sum(accuracies) / len(accuracies)
+    av_sentence_match = sum(sentence_matches) / len(sentence_matches)
+    return accuracies, sentence_matches, av_accuracy, av_sentence_match
+
+
+accuracies, sentence_matches, av_accuracy, av_sentence_match = complete_cv()
+
+y = [x for x in range(1,8)]
+
+print('Plotting...')
+
+plotting(accuracies, sentence_matches, y)
+
+print('Final score:\n Accuracy: ' + str(av_accuracy) + '\n Sentence match: ' + str(av_sentence_match * 100) + '%\n\n)

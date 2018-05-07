@@ -188,6 +188,8 @@ def vec_query(): # вставляю в базу данных векторизо�
 
 # массив кортежей ([дано], [цель]), тренировочные данные
 def train_set():
+    train_update()
+    print('Creating dataset...\n')
     conn = sqlite3.connect('characters.db')
     c = conn.cursor()
     c.execute('''SELECT vectorization, arr_target
@@ -283,13 +285,13 @@ def appendix():  # чтобы длины инпутов совпадали
     conn.close()
 
 def train_update():
+    print('Updating data...')
     characters_base()
     train_base()
     vec_train()
+    appendix()
 
 def query_update():
     query_base()
     vec_query()
-
-def preparation():
     appendix()
